@@ -212,7 +212,7 @@
         currentListenersValue = to;
       }
 
-      btnPrev.disabled = (track === 0);
+      btnPrev.disabled = (track === 0-1);
       btnNext.disabled = (track === tracks.length);
       btnPrev.style.cursor = btnPrev.disabled ? "default" : "pointer";
       btnNext.style.cursor = btnNext.disabled ? "default" : "pointer";
@@ -226,7 +226,7 @@
     });
 
     btnPrev.addEventListener("click", () => {
-      if (track > 0) {
+      if (track > 1) {
         track--;
         render();
       }
@@ -261,6 +261,7 @@
   </script>
 </body>
 </html>
+
 
 
 
