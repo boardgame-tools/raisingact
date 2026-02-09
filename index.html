@@ -37,14 +37,14 @@
     }
 
     #text1 {
-      top: 10%;
+      bottom: 30%;
       font-weight: 800;
       font-size: clamp(22px, 5.5vw, 42px);
       line-height: 1.15;
     }
 
     #text2 {
-      top: 20%;
+      bottom: 35%;
       font-weight: 500;
       font-size: clamp(16px, 4.2vw, 26px);
       line-height: 1.35;
@@ -62,8 +62,8 @@
     }
 
     /* Button-Positionen (anpassen!) */
-    #btnPrev { left: 5%;  bottom: 4%; width: 22%; height: 14%; }
-    #btnNext { right: 5%; bottom: 4%; width: 22%; height: 14%; }
+    #btnPrev { left: 15%;  bottom: 4%; width: 22%; height: 14%; }
+    #btnNext { right: 15%; bottom: 4%; width: 22%; height: 14%; }
 
     /* Overlay für 2 Sekunden */
     #overlay {
@@ -89,11 +89,11 @@
       pointer-events: none;
     }
 
-   
+   /*
     .hotspot { 
         outline: 2px dashed rgba(0,255,0,.6); 
         background: rgba(0,255,0,.08); }
-    
+    */
   </style>
 </head>
 
@@ -245,8 +245,8 @@
       startX = null;
 
       if (Math.abs(dx) < 60) return;
-      if (dx < 0) btnNext.click(); // Swipe left
-      else btnPrev.click();        // Swipe right
+      if (dx < 0) btnPrev.click(); // Swipe left
+      else btnNext.click();        // Swipe right
     }, { passive: true });
 
     // Overlay nach 2 Sekunden ausblenden
