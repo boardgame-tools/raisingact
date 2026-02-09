@@ -213,7 +213,7 @@
       }
 
       btnPrev.disabled = (track === 0-1);
-      btnNext.disabled = (track === tracks.length);
+      btnNext.disabled = (track === tracks.length-1);
       btnPrev.style.cursor = btnPrev.disabled ? "default" : "pointer";
       btnNext.style.cursor = btnNext.disabled ? "default" : "pointer";
     }
@@ -261,6 +261,7 @@
   </script>
 </body>
 </html>
+
 
 
 
