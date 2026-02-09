@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>RaisingActCounter</title>
+
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      background: #000;
+      overflow: hidden;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: #fff;
+      -webkit-text-size-adjust: 100%;
+      touch-action: manipulation;
+    }
+
+    /* App-Container */
+    #app {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right)
+               env(safe-area-inset-bottom) env(safe-area-inset-left);
+      box-sizing: border-box;
+      background: url("bg.jpg") center/cover no-repeat;
+    }
+
+    /* Textfelder */
+    .textBox {
+      position: absolute;
+      left: 6%;
+      width: 88%;
+      text-shadow: 0 2px 10px rgba(0,0,0,.75);
+    }
+
+    #text1 {
+      top: 10%;
+      font-weight: 800;
+      font-size: clamp(22px, 5.5vw, 42px);
+      line-height: 1.15;
+    }
+
+    #text2 {
+      top: 20%;
+      font-weight: 500;
+      font-size: clamp(16px, 4.2vw, 26px);
+      line-height: 1.35;
+      font-variant-numeric: tabular-nums; /* wirkt besser bei Zählen */
+    }
+
+    /* Transparente Hotspot Buttons */
+    .hotspot {
+      position: absolute;
+      background: rgba(255,255,255,0);
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Button-Positionen (anpassen!) */
+    #btnPrev { left: 5%;  bottom: 4%; width: 22%; height: 14%; }
+    #btnNext { right: 5%; bottom: 4%; width: 22%; height: 14%; }
+
+    /* Overlay für 2 Sekunden */
+    #overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.85);
+      z-index: 50;
+      opacity: 1;
+      transition: opacity 350ms ease;
+    }
+
+    #overlay img {
+      width: min(80vw, 520px);
+      height: auto;
+      display: block;
+    }
+
+    #overlay.hide {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+   
+    .hotspot { 
+        outline: 2px dashed rgba(0,255,0,.6); 
+        background: rgba(0,255,0,.08); }
+    
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <!-- Overlay (2 Sekunden) -->
+    <div id="overlay" aria-hidden="true">
+      <img src="images/overlay.png" alt="">
+    </div>
+
+    <!-- Texte -->
+    <div id="text1" class="textBox"></div>
+    <div id="text2" class="textBox"></div>
+
+    <!-- Hotspots -->
+    <button id="btnPrev" class="hotspot" aria-label="Zurück"></button>
+    <button id="btnNext" class="hotspot" aria-label="Weiter"></button>
+  </div>
+
+  <script>
+    // Track-Daten (Track 1..30)
+    const tracks = [
+      { listeners: "0", desc: "" },
+      { listeners: "0", desc: "Bandgründung" },
+      { listeners: "1", desc: "" },
+      { listeners: "10", desc: "erste Freunde" },
+      { listeners: "25", desc: "kleine Aufmerksamkeit" },
+      { listeners: "50", desc: "lokale Szene" },
+      { listeners: "100", desc: "erste Fans" },
+      { listeners: "200", desc: "erste kleine Shows" },
+      { listeners: "400", desc: "Wachstum startet" },
+      { listeners: "800", desc: "Fanbase sichtbar" },
+      { listeners: "1.500", desc: "Underground" },
+      { listeners: "3.000", desc: "Szene kennt euch" },
+      { listeners: "5.000", desc: "erste Reichweite" },
+      { listeners: "8.000", desc: "Momentum" },
+      { listeners: "12.000", desc: "regional bekannt ⭐" },
+      { listeners: "18.000", desc: "Support-Gigs" },
+      { listeners: "25.000", desc: "stabiler Aufstieg" },
+      { listeners: "40.000", desc: "ernsthafte Band" },
+      { listeners: "60.000", desc: "Fanwachstum" },
+      { listeners: "85.000", desc: "kurz vorm Durchbruch" },
+      { listeners: "120.000", desc: "Durchbruch 🚀" },
+      { listeners: "170.000", desc: "neue Chancen" },
+      { listeners: "230.000", desc: "größere Locations" },
+      { listeners: "300.000", desc: "Medieninteresse" },
+      { listeners: "380.000", desc: "etablierter Act" },
+      { listeners: "480.000", desc: "Tourfähig" },
+      { listeners: "600.000", desc: "große Shows" },
+      { listeners: "720.000", desc: "starke Präsenz" },
+      { listeners: "820.000", desc: "Szene-Größe" },
+      { listeners: "900.000", desc: "Top-Level" },
+      { listeners: "1.000.000", desc: "Headliner" }
+    ];
+
+    let track = 1; // 1..tracks.length
+    let currentListenersValue = null;
+
+    const text1 = document.getElementById("text1");
+    const text2 = document.getElementById("text2");
+    const btnPrev = document.getElementById("btnPrev");
+    const btnNext = document.getElementById("btnNext");
+    const overlay = document.getElementById("overlay");
+    const app = document.getElementById("app");
+
+    function parseListeners(str) {
+      return Number(str.replace(/\./g, ""));
+    }
+
+    function formatListeners(num) {
+      return num.toLocaleString("de-DE");
+    }
+
+    function animateNumber(from, to, durationMs, onUpdate) {
+      const start = performance.now();
+      const diff = to - from;
+
+      function tick(now) {
+        const t = Math.min(1, (now - start) / durationMs);
+        // Ease in/out
+        const eased = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t + 2, 2)/2;
+
+        const value = Math.round(from + diff * eased);
+        onUpdate(value);
+
+        if (t < 1) requestAnimationFrame(tick);
+      }
+
+      requestAnimationFrame(tick);
+    }
+
+    function render() {
+      text1.textContent = "Track " + track;
+
+      const data = tracks[track];
+      const target = parseListeners(data.listeners);
+
+      if (currentListenersValue === null) {
+        currentListenersValue = target;
+        let out = `${formatListeners(currentListenersValue)} monatliche Hörer`;
+        if (data.desc) out += ` — ${data.desc}`;
+        text2.textContent = out;
+      } else {
+        const from = currentListenersValue;
+        const to = target;
+
+        // Dauer dynamisch: große Sprünge etwas länger
+        const duration = Math.min(1200, Math.max(450, Math.abs(to - from) / 1200));
+
+        animateNumber(from, to, duration, (val) => {
+          let out = `${formatListeners(val)} monatliche Hörer`;
+          if (data.desc) out += ` — ${data.desc}`;
+          text2.textContent = out;
+        });
+
+        currentListenersValue = to;
+      }
+
+      btnPrev.disabled = (track === 1);
+      btnNext.disabled = (track === tracks.length);
+      btnPrev.style.cursor = btnPrev.disabled ? "default" : "pointer";
+      btnNext.style.cursor = btnNext.disabled ? "default" : "pointer";
+    }
+
+    btnNext.addEventListener("click", () => {
+      if (track < tracks.length) {
+        track++;
+        render();
+      }
+    });
+
+    btnPrev.addEventListener("click", () => {
+      if (track > 1) {
+        track--;
+        render();
+      }
+    });
+
+    // Optional: Swipe links/rechts (mobil angenehm)
+    let startX = null;
+    app.addEventListener("touchstart", (e) => {
+      startX = e.touches[0].clientX;
+    }, { passive: true });
+
+    app.addEventListener("touchend", (e) => {
+      if (startX === null) return;
+      const endX = e.changedTouches[0].clientX;
+      const dx = endX - startX;
+      startX = null;
+
+      if (Math.abs(dx) < 60) return;
+      if (dx < 0) btnNext.click(); // Swipe left
+      else btnPrev.click();        // Swipe right
+    }, { passive: true });
+
+    // Overlay nach 2 Sekunden ausblenden
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        overlay.classList.add("hide");
+        setTimeout(() => overlay.style.display = "none", 400);
+      }, 2000);
+    });
+
+    render();
+  </script>
+</body>
+</html>
